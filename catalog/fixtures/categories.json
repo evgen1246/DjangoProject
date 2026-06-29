@@ -1,0 +1,18 @@
+[
+{
+  "model": "catalog.category",
+  "pk": 1,
+  "fields": {
+    "name": "Электроника",
+    "description": "Тут описание данной категории"
+  }
+},
+{
+  "model": "catalog.category",
+  "pk": 2,
+  "fields": {
+    "name": "Канцелярия",
+    "description": "Тут описание данной категории"
+  }
+}
+]
