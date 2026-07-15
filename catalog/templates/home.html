@@ -19,16 +19,15 @@
                     <h4 class="my-0 font-weight-normal">{{ product.name }}</h4>
                 </div>
                 <div class="card-body">
-
                     {% if product.image %}
-                    <img src="{{ product.image|media_filter }}" alt="{{ product.name }}" class="img-fluid mb-3" style="height: 120px; width: 100%; object-fit: contain;">
+                    <img src="{{ product.image.url }}" alt="{{ product.name }}" class="img-fluid mb-3" style="height: 120px; width: 100%; object-fit: contain;">
                     {% else %}
                     <div class="bg-light mb-3 d-flex align-items-center justify-content-center" style="height: 120px;">
                         <span class="text-muted small">Нет фото</span>
                     </div>
                     {% endif %}
 
-                    <h1 class="card-title pricing-card-title">$ {{ product.price }}</h1>
+                    <h1 class="card-title pricing-card-title"> {{ product.price }} $</h1>
                     <ul class="list-unstyled mt-3 mb-4 text-start m-3">
                         <li><strong>Категория:</strong> {{ product.category.name }}</li>
                         <li><strong>Описание:</strong> {{ product.description|truncatechars:100 }}</li>

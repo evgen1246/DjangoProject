@@ -1,0 +1,70 @@
+{% extends 'base.html' %}
+{% load blog_tags %}
+
+{% block title %}{{ blog_post.title }} - Блог Skystore{% endblock %}
+
+{% block content %}
+<div class="container">
+    <nav aria-label="breadcrumb" class="mt-3">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'blog:blogpost_list' %}">Блог</a></li>
+            <li class="breadcrumb-item active" aria-current="page">{{ blog_post.title }}</li>
+        </ol>
+    </nav>
+
+    <div class="row">
+        <div class="col-md-8">
+            <article>
+                <h1 class="display-4">{{ blog_post.title }}</h1>
+
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <span class="text-muted">
+                        <i class="bi bi-calendar"></i> {{ blog_post.created_at|date:"d.m.Y H:i" }}
+                    </span>
+                </div>
+
+                <div class="d-flex gap-2 mb-4">
+                    <a href="{% url 'blog:blogpost_update' blog_post.pk %}" class="btn btn-warning btn-sm">
+                        ✏️ Редактировать
+                    </a>
+                    <a href="{% url 'blog:blogpost_delete' blog_post.pk %}" class="btn btn-danger btn-sm">
+                        🗑️ Удалить
+                    </a>
+                    <a href="{% url 'blog:blogpost_list' %}" class="btn btn-secondary btn-sm">
+                        ← Назад к списку
+                    </a>
+                </div>
+
+                {% if blog_post.preview %}
+                <div class="mb-4">
+                    <img src="{{ blog_post.preview.url }}" alt="{{ blog_post.title }}" class="img-fluid rounded">
+                </div>
+                {% endif %}
+
+                <div class="content">
+                    {{ blog_post.content|linebreaks }}
+                </div>
+            </article>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Информация</h5>
+                    <ul class="list-unstyled">
+                        <li><strong>Дата создания:</strong> {{ blog_post.created_at|date:"d.m.Y H:i" }}</li>
+                        <li><strong>Просмотров:</strong> {{ blog_post.views_count }}</li>
+                        <li><strong>Статус:</strong>
+                            {% if blog_post.is_published %}
+                            <span class="badge bg-success">Опубликовано</span>
+                            {% else %}
+                            <span class="badge bg-secondary">Черновик</span>
+                            {% endif %}
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
