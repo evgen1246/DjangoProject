@@ -8,6 +8,9 @@
         <a class="p-2 btn btn-outline-primary" href="{% url 'catalog:home' %}">Каталог</a>
         <a class="p-2 btn btn-outline-primary" href="{% url 'catalog:contacts' %}">Контакты</a>
         <a class="p-2 btn btn-outline-primary" href="{% url 'blog:blogpost_list' %}">Блог</a>
+        <a class="p-2 btn btn-success" href="{% url 'catalog:product_create' %}">
+        <i class="bi bi-plus-circle"></i> Добавить товар
+    </a>
 
 
         {% block extra_menu_items %}{% endblock %}
