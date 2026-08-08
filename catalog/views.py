@@ -1,8 +1,10 @@
-from django.views.generic import ListView, DetailView, TemplateView, CreateView, UpdateView, DeleteView
-from django.urls import reverse_lazy
 from django.contrib import messages
-from .models import Product
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.urls import reverse_lazy
+from django.views.generic import CreateView, DeleteView, DetailView, ListView, TemplateView, UpdateView
+
 from .forms import ProductForm
+from .models import Product
 
 # def home(request):
 #     products = Product.objects.select_related("category").all()
@@ -33,7 +35,7 @@ class ProductListView(ListView):
         return Product.objects.select_related("category").all()
 
 
-class ProductDetailView(DetailView):
+class ProductDetailView(LoginRequiredMixin, DetailView):
     model = Product
     template_name = "product_detail.html"
     context_object_name = "product"  # Имя переменной в шаблоне
@@ -47,7 +49,7 @@ class ProductDetailView(DetailView):
         return context
 
 
-class ProductCreateView(CreateView):
+class ProductCreateView(LoginRequiredMixin, CreateView):
     """Создание нового продукта"""
 
     model = Product
@@ -69,7 +71,7 @@ class ProductCreateView(CreateView):
         return reverse_lazy("catalog:product_detail", kwargs={"pk": self.object.pk})
 
 
-class ProductUpdateView(UpdateView):
+class ProductUpdateView(LoginRequiredMixin, UpdateView):
     """Редактирование продукта"""
 
     model = Product
@@ -91,7 +93,7 @@ class ProductUpdateView(UpdateView):
         return reverse_lazy("catalog:product_detail", kwargs={"pk": self.object.pk})
 
 
-class ProductDeleteView(DeleteView):
+class ProductDeleteView(LoginRequiredMixin, DeleteView):
     """Удаление продукта"""
 
     model = Product
