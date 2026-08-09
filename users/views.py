@@ -63,5 +63,5 @@ class CustomLogoutView(View):
 
     def get(self, request):
         logout(request)
-        messages.success(request, 'Вы успешно вышли из системы!')
-        return redirect('catalog:home')
+        messages.success(request, "Вы успешно вышли из системы!")
+        return redirect("catalog:home")

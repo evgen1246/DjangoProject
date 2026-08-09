@@ -10,6 +10,7 @@ class UserRegisterForm(UserCreationForm):
     """
     Форма для регистрации пользователя с полями электронной почты и пароля
     """
+
     email = forms.EmailField(
         required=True, widget=forms.EmailInput(attrs={"class": "form-control", "placeholder": "Введите email"})
     )
@@ -20,7 +21,6 @@ class UserRegisterForm(UserCreationForm):
         label="Подтверждение пароля",
         widget=forms.PasswordInput(attrs={"class": "form-control", "placeholder": "Повторите пароль"}),
     )
-
 
     class Meta:
         model = User

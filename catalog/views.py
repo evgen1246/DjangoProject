@@ -1,29 +1,12 @@
 from django.contrib import messages
-from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
+from django.core.exceptions import PermissionDenied
 from django.urls import reverse_lazy
+from django.shortcuts import redirect
 from django.views.generic import CreateView, DeleteView, DetailView, ListView, TemplateView, UpdateView
 
 from .forms import ProductForm
 from .models import Product
-
-# def home(request):
-#     products = Product.objects.select_related("category").all()
-#     context = {
-#         "products": products,
-#     }
-#     return render(request, "home.html", context)
-#
-#
-# def contacts(request):
-#     return render(request, "contacts.html")
-#
-#
-# def product_detail(request, product_id):
-#     product = get_object_or_404(Product, pk=product_id)
-#     context = {
-#         "product": product,
-#     }
-#     return render(request, "product_detail.html", context)
 
 
 class ProductListView(ListView):
@@ -32,7 +15,7 @@ class ProductListView(ListView):
     context_object_name = "products"
 
     def get_queryset(self):
-        return Product.objects.select_related("category").all()
+        return Product.objects.select_related("category").filter(is_published=True)
 
 
 class ProductDetailView(LoginRequiredMixin, DetailView):
@@ -57,6 +40,7 @@ class ProductCreateView(LoginRequiredMixin, CreateView):
     template_name = "catalog/product_form.html"
 
     def form_valid(self, form):
+        form.instance.owner = self.request.user
         response = super().form_valid(form)
         messages.success(self.request, f'Товар "{self.object.name}" успешно создан!')
         return response
@@ -79,6 +63,7 @@ class ProductUpdateView(LoginRequiredMixin, UpdateView):
     template_name = "catalog/product_form.html"
 
     def form_valid(self, form):
+        form.instance.owner = self.request.user
         response = super().form_valid(form)
         messages.success(self.request, f'Товар "{self.object.name}" успешно обновлен!')
         return response
@@ -91,6 +76,13 @@ class ProductUpdateView(LoginRequiredMixin, UpdateView):
 
     def get_success_url(self):
         return reverse_lazy("catalog:product_detail", kwargs={"pk": self.object.pk})
+
+    def get_object(self, queryset=None):
+        product = super().get_object(queryset)
+        if product.owner != self.request.user and not self.request.user.is_superuser:
+            messages.error(self.request, "Вы не являетесь владельцем этого товара и не можете его редактировать.")
+            raise PermissionDenied
+        return product
 
 
 class ProductDeleteView(LoginRequiredMixin, DeleteView):
@@ -108,6 +100,17 @@ class ProductDeleteView(LoginRequiredMixin, DeleteView):
         messages.success(request, f'Товар "{title}" успешно удален!')
         return response
 
+    def get_object(self, queryset=None):
+        product = super().get_object(queryset)
+        if not (
+            product.owner == self.request.user
+            or self.request.user.has_perm("catalog.can_unpublish_product")
+            or self.request.user.is_superuser
+        ):
+            messages.error(self.request, "У вас нет прав для удаления этого товара.")
+            raise PermissionDenied
+        return product
+
 
 class ContactsView(TemplateView):
     template_name = "contacts.html"
@@ -115,3 +118,33 @@ class ContactsView(TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         return context
+
+
+class ProductUnpublishView(LoginRequiredMixin, PermissionRequiredMixin, DetailView):
+    """Отмена публикации товара (только для авторизованных с правом can_unpublish_product)"""
+
+    model = Product
+    template_name = "catalog/product_unpublish_confirm.html"
+    context_object_name = "product"
+    permission_required = "catalog.can_unpublish_product"
+    raise_exception = False
+
+    def post(self, request, *args, **kwargs):
+        """Обработка POST запроса для отмены публикации"""
+        self.object = self.get_object()
+        if not self.object.is_published:
+            messages.warning(self.request, f'Товар "{self.object.name}" уже снят с публикации.')
+            return redirect("catalog:product_detail", pk=self.object.pk)
+        self.object.is_published = False
+        self.object.save()
+
+        messages.success(self.request, f'Товар "{self.object.name}" снят с публикации!')
+        return redirect("catalog:product_detail", pk=self.object.pk)
+
+    def get_object(self, queryset=None):
+        product = super().get_object(queryset)
+
+        if product.owner != self.request.user and not self.request.user.has_perm("catalog.can_unpublish_product"):
+            messages.error(self.request, "У вас нет прав для отмены публикации этого товара.")
+            raise PermissionDenied
+        return product
