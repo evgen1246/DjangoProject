@@ -18,10 +18,11 @@
             </div>
         {% endfor %}
     {% endif %}
+
     {% if user.is_authenticated %}
     <div class="d-flex justify-content-end mb-3">
         <a href="{% url 'catalog:product_create' %}" class="btn btn-success">
-            + Добавить товар
+            <i class="bi bi-plus-circle"></i> Добавить товар
         </a>
     </div>
     {% endif %}
@@ -31,8 +32,13 @@
         {% for product in products %}
         <div class="col-3">
             <div class="card mb-4 box-shadow">
-                <div class="card-header">
+                <div class="card-header d-flex justify-content-between align-items-center">
                     <h4 class="my-0 font-weight-normal">{{ product.name }}</h4>
+                    {% if not product.is_published %}
+                        <span class="badge bg-secondary">Черновик</span>
+                    {% else %}
+                        <span class="badge bg-success">Опубликован</span>
+                    {% endif %}
                 </div>
                 <div class="card-body">
                     {% if product.image %}
@@ -47,27 +53,50 @@
                     <ul class="list-unstyled mt-3 mb-4 text-start m-3">
                         <li><strong>Категория:</strong> {{ product.category.name }}</li>
                         <li><strong>Описание:</strong> {{ product.description|truncatechars:100 }}</li>
+                        <li><strong>Владелец:</strong> {{ product.owner|default:"Не указан" }}</li>
                     </ul>
 
-                    <!-- Кнопки управления только для авторизованных -->
                     {% if user.is_authenticated %}
-                    <div class="d-flex flex-column gap-1">
-                        <a href="{% url 'catalog:product_detail' product.id %}" class="btn btn-outline-primary btn-sm">
-                            Подробнее
-                        </a>
-                        <div class="d-flex gap-1">
-                            <a href="{% url 'catalog:product_update' product.id %}" class="btn btn-outline-warning btn-sm flex-fill">
-                                Изменить
+                        {% if user == product.owner or perms.catalog.can_unpublish_product %}
+                            <div class="d-flex flex-column gap-1">
+                                <a href="{% url 'catalog:product_detail' product.id %}" class="btn btn-outline-primary btn-sm">
+                                    Подробнее
+                                </a>
+                                <div class="d-flex gap-1">
+                                    <!-- Редактирование доступно только владельцу -->
+                                    {% if user == product.owner %}
+                                    <a href="{% url 'catalog:product_update' product.id %}" class="btn btn-outline-warning btn-sm flex-fill">
+                                        <i class="bi bi-pencil"></i> Редактировать
+                                    </a>
+                                    {% endif %}
+
+                                    {% if user == product.owner or perms.catalog.can_unpublish_product or user.is_superuser %}
+                                        {% if perms.catalog.delete_product %}
+                                        <a href="{% url 'catalog:product_delete' product.id %}" class="btn btn-outline-danger btn-sm flex-fill">
+                                            <i class="bi bi-trash"></i> Удалить
+                                        </a>
+                                        {% endif %}
+                                    {% endif %}
+                                    <!-- Снятие с публикации доступно модератору или владельцу с правом -->
+                                    {% if perms.catalog.can_unpublish_product and product.is_published %}
+                                        {% if user == product.owner or perms.catalog.can_unpublish_product %}
+                                        <a href="{% url 'catalog:product_unpublish' product.id %}" class="btn btn-outline-warning btn-sm flex-fill">
+                                            <i class="bi bi-eye-slash"></i> Снять
+                                        </a>
+                                        {% endif %}
+                                    {% endif %}
+                                </div>
+                            </div>
+                        {% else %}
+                            <a href="{% url 'catalog:product_detail' product.id %}" class="btn btn-outline-primary btn-sm">
+                                Подробнее
                             </a>
-                            <a href="{% url 'catalog:product_delete' product.id %}" class="btn btn-outline-danger btn-sm flex-fill">
-                                Удалить
-                            </a>
-                        </div>
-                    </div>
+
+                        {% endif %}
                     {% else %}
-                    <a href="{% url 'users:login' %}" class="btn btn-outline-primary btn-sm">
-                        Войдите для просмотра
-                    </a>
+                        <a href="{% url 'users:login' %}" class="btn btn-outline-primary btn-sm">
+                            Войдите для просмотра
+                        </a>
                     {% endif %}
                 </div>
             </div>
