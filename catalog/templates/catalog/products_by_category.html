@@ -1,0 +1,107 @@
+{% extends 'base.html' %}
+
+{% block title %}
+    {% if category %}
+        {{ category.name }} - Skystore
+    {% else %}
+        Категория не найдена - Skystore
+    {% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <nav aria-label="breadcrumb" class="mt-3">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'catalog:home' %}">Главная</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'catalog:product_list' %}">Каталог</a></li>
+            <li class="breadcrumb-item active" aria-current="page">
+                {% if category %}{{ category.name }}{% else %}Категория не найдена{% endif %}
+            </li>
+        </ol>
+    </nav>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="display-4">
+            {% if category %}
+                {{ category.name }}
+                <small class="text-muted fs-6">({{ products|length }} товаров)</small>
+            {% else %}
+                Категория не найдена
+            {% endif %}
+        </h1>
+        {% if user.is_authenticated %}
+            <a href="{% url 'catalog:product_create' %}" class="btn btn-success">
+                <i class="bi bi-plus-circle"></i> Добавить товар
+            </a>
+        {% endif %}
+    </div>
+
+    {% if category and category.description %}
+        <p class="lead">{{ category.description }}</p>
+        <hr>
+    {% endif %}
+
+    {% if products %}
+        <div class="row">
+            {% for product in products %}
+            <div class="col-3">
+                <div class="card mb-4 box-shadow">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h4 class="my-0 font-weight-normal">{{ product.name }}</h4>
+                        {% if not product.is_published %}
+                            <span class="badge bg-secondary">Черновик</span>
+                        {% else %}
+                            <span class="badge bg-success">Опубликован</span>
+                        {% endif %}
+                    </div>
+                    <div class="card-body">
+                        {% if product.image %}
+                        <img src="{{ product.image.url }}" alt="{{ product.name }}" class="img-fluid mb-3" style="height: 120px; width: 100%; object-fit: contain;">
+                        {% else %}
+                        <div class="bg-light mb-3 d-flex align-items-center justify-content-center" style="height: 120px;">
+                            <span class="text-muted small">Нет фото</span>
+                        </div>
+                        {% endif %}
+
+                        <h1 class="card-title pricing-card-title">{{ product.price }} ₽</h1>
+                        <ul class="list-unstyled mt-3 mb-4 text-start m-3">
+                            <li><strong>Категория:</strong> {{ product.category.name }}</li>
+                            <li><strong>Описание:</strong> {{ product.description|truncatechars:100 }}</li>
+                        </ul>
+
+                        <a href="{% url 'catalog:product_detail' product.id %}" class="btn btn-outline-primary btn-sm w-100">
+                            Подробнее
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="text-center py-5">
+            <h3>В этой категории пока нет товаров</h3>
+            <p class="text-muted">Добавьте первый товар в категорию!</p>
+            {% if user.is_authenticated %}
+            <a href="{% url 'catalog:product_create' %}" class="btn btn-primary">Добавить товар</a>
+            {% else %}
+            <a href="{% url 'users:login' %}" class="btn btn-primary">Войдите, чтобы добавить товар</a>
+            {% endif %}
+        </div>
+    {% endif %}
+
+    <div class="mt-4 mb-5">
+        <a href="{% url 'catalog:product_list' %}" class="btn btn-secondary">
+            <i class="bi bi-arrow-left"></i> Вернуться в каталог
+        </a>
+    </div>
+</div>
+{% endblock %}
