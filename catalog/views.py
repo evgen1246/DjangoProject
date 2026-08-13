@@ -1,5 +1,6 @@
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
+from django.core.cache import cache
 from django.core.exceptions import PermissionDenied
 from django.urls import reverse_lazy
 from django.shortcuts import redirect
@@ -16,7 +17,16 @@ class ProductListView(ListView):
     context_object_name = "products"
 
     def get_queryset(self):
-        return Product.objects.select_related("category").filter(is_published=True)
+
+        cache_key = "product_list_all"
+        products = cache.get('cache_key')
+
+        if products is None:
+            products = Product.objects.select_related("category").filter(is_published=True)
+            cache.set(cache_key, products, timeout=60*10)
+
+
+        return products
 
 
 class ProductDetailView(LoginRequiredMixin, DetailView):
