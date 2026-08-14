@@ -1,5 +1,6 @@
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
+from django.core.cache import cache
 from django.core.exceptions import PermissionDenied
 from django.urls import reverse_lazy
 from django.shortcuts import redirect
@@ -7,6 +8,7 @@ from django.views.generic import CreateView, DeleteView, DetailView, ListView, T
 
 from .forms import ProductForm
 from .models import Product
+from .services import get_products_by_category, get_category_by_id, get_all_categories
 
 
 class ProductListView(ListView):
@@ -15,7 +17,16 @@ class ProductListView(ListView):
     context_object_name = "products"
 
     def get_queryset(self):
-        return Product.objects.select_related("category").filter(is_published=True)
+
+        cache_key = "product_list_all"
+        products = cache.get('cache_key')
+
+        if products is None:
+            products = Product.objects.select_related("category").filter(is_published=True)
+            cache.set(cache_key, products, timeout=60*10)
+
+
+        return products
 
 
 class ProductDetailView(LoginRequiredMixin, DetailView):
@@ -148,3 +159,23 @@ class ProductUnpublishView(LoginRequiredMixin, PermissionRequiredMixin, DetailVi
             messages.error(self.request, "У вас нет прав для отмены публикации этого товара.")
             raise PermissionDenied
         return product
+
+
+class ProductsByCategoryView(ListView):
+    """
+    Представление для отображения продуктов в указанной категории.
+    """
+    template_name = 'catalog/products_by_category.html'
+    context_object_name = 'products'
+
+    def get_queryset(self):
+        category_id = self.kwargs.get('category_id')
+        return get_products_by_category(category_id)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        category_id = self.kwargs.get('category_id')
+        category = get_category_by_id(category_id)
+        context['category'] = category
+        context['categories'] = get_all_categories()
+        return context
